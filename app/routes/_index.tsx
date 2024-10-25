@@ -99,14 +99,14 @@ export default function Index() {
     };
   }, [scan]);
 
-  const extract = (text: string) => {
+  const extract = useCallback((text: string) => {
     const regex = document.getElementById("regex") as HTMLInputElement;
     if (!regex) {
       return "";
     }
     const pattern = new RegExp(regex.value);
     return text.replace(pattern, "$1");
-  };
+  }, []);
 
   return (
     <div className="flex justify-center">
