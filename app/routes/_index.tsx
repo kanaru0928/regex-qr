@@ -12,6 +12,7 @@ import {
 } from "@remix-run/react";
 import jsQR from "jsqr";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { extract } from "~/scripts/extract.client";
 
 export const meta: MetaFunction = () => {
   return [
@@ -30,6 +31,7 @@ export default function Index() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [text, setText] = useState<string>("Capture the QR code");
+  const [extractedText, setExtractedText] = useState<string>("");
   const { regexParam } = useLoaderData<typeof loader>();
   const submit = useSubmit();
 
@@ -39,6 +41,15 @@ export default function Index() {
       field.value = regexParam || "";
     }
   }, [regexParam]);
+
+  useEffect(() => {
+    const regex = document.getElementById("regex") as HTMLInputElement;
+    if (!regex) {
+      return "";
+    }
+    const pattern = new RegExp(regex.value);
+    setExtractedText(text.replace(pattern, "$1"));
+  }, [text]);
 
   const scan = useCallback(() => {
     const canvas = canvasRef.current;
@@ -99,27 +110,11 @@ export default function Index() {
     };
   }, [scan]);
 
-  const extract = useCallback((text: string) => {
-    const regex = document.getElementById("regex") as HTMLInputElement;
-    if (!regex) {
-      return "";
-    }
-    const pattern = new RegExp(regex.value);
-    return text.replace(pattern, "$1");
-  }, []);
-
   return (
     <div className="flex justify-center">
       <div className="flex flex-col gap-5 h-screen max-w-full">
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          className="max-h-[calc(100%-10em)]"
-        />
-        <p className="z-10 text-5xl font-bold text-center">{extract(text)}</p>
-        <div className="flex gap-3 items-baseline">
-          <Form method="get" onChange={(e) => submit(e.currentTarget)}>
+        <Form method="get" onChange={(e) => submit(e.currentTarget)}>
+          <div className="flex gap-3 items-baseline">
             <p>Regex:</p>
             <input
               type="text"
@@ -128,8 +123,15 @@ export default function Index() {
               id="regex"
               className="border px-3 py-2 rounded-full flex-1"
             />
-          </Form>
-        </div>
+          </div>
+        </Form>
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          className="max-h-[calc(100%-10em)]"
+        />
+        <p className="z-10 text-5xl font-bold text-center">{extractedText}</p>
       </div>
       <canvas
         className="hidden"
